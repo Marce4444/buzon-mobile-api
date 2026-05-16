@@ -1,0 +1,13 @@
+# Entornos virtuales
+venv/
+env/
+
+# Archivos de caché de Python
+__pycache__/
+*.pyc
+
+# Base de datos local 
+buzon.db
+
+# Variables de entorno y secretos
+.env

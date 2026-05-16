@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tu Código - Entel</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #002eff; color: white; padding: 20px; }
+        .container { background: white; color: #333; padding: 40px 20px; border-radius: 15px; max-width: 400px; margin: 50px auto; }
+        .codigo { font-size: 80px; font-weight: bold; color: #ff4500; margin: 20px 0; letter-spacing: 2px;}
+        .instruccion { font-size: 18px; line-height: 1.5; color: #555;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>Tu código de trazabilidad es:</h3>
+        <div class="codigo">{{ codigo }}</div>
+        <p class="instruccion">
+            <strong>Paso 1:</strong> Toma el marcador de tiza del buzón.<br>
+            <strong>Paso 2:</strong> Escribe este código en la pantalla de tu celular.<br>
+            <strong>Paso 3:</strong> Pon el celular frente a la cámara de la compuerta.
+        </p>
+    </div>
+</body>
+</html>
