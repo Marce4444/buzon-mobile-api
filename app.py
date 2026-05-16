@@ -25,6 +25,12 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
+    # --- TRUCO PARA LIMPIAR LA NUBE ---
+    # Esto obligará a Render a borrar las tablas corruptas si es que existen
+    cursor.execute("DROP TABLE IF EXISTS transacciones;")
+    cursor.execute("DROP TABLE IF EXISTS usuarios;")
+    # ----------------------------------
+    
     # Tabla de Usuarios (Wallet)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
@@ -49,7 +55,7 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
-    print("[BD] Base de datos lista para operar.")
+    print("[BD] Base de datos limpia y lista para operar.")
 
 def generar_codigo_tiza():
     letra = random.choice(string.ascii_uppercase)
