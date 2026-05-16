@@ -25,12 +25,6 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # --- TRUCO PARA LIMPIAR LA NUBE ---
-    # Esto obligará a Render a borrar las tablas corruptas si es que existen
-    cursor.execute("DROP TABLE IF EXISTS transacciones;")
-    cursor.execute("DROP TABLE IF EXISTS usuarios;")
-    # ----------------------------------
-    
     # Tabla de Usuarios (Wallet)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
