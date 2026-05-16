@@ -5,19 +5,19 @@ import string
 import os
 from dotenv import load_dotenv
 
-# Cargar las variables del archivo .env al sistema
 load_dotenv()
 
 app = Flask(__name__)
 
-# --- SEGURIDAD ---
-# Ahora Python va a buscar la clave en el entorno. 
-# Si por algún motivo no la encuentra, se bloquea por defecto.
+# --- SEGURIDAD Y CONFIGURACIÓN ---
 API_SECRET_KEY = os.getenv("API_SECRET_KEY")
 if not API_SECRET_KEY:
-    raise ValueError("¡Error Crítico! No se encontró API_SECRET_KEY en las variables de entorno.")
+    raise ValueError("¡Error Crítico! No se encontró API_SECRET_KEY")
 
-DB_PATH = 'buzon.db'
+# ESTO ASEGURA LA RUTA ABSOLUTA EN CUALQUIER SERVIDOR (Windows o Render)
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DB_PATH = os.path.join(BASE_DIR, 'buzon.db')
+print(f"[SYS] La base de datos se ubicará en: {DB_PATH}")
 
 # --- 1. CAPA DE DATOS (Arquitectura Limpia) ---
 def init_db():
