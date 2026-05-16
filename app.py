@@ -21,6 +21,7 @@ DB_PATH = 'buzon.db'
 
 # --- 1. CAPA DE DATOS (Arquitectura Limpia) ---
 def init_db():
+    print("[BD] Inicializando base de datos y verificando tablas...")
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
@@ -48,6 +49,7 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
+    print("[BD] Base de datos lista para operar.")
 
 def generar_codigo_tiza():
     letra = random.choice(string.ascii_uppercase)
@@ -147,10 +149,8 @@ def api_confirmar_deposito():
 
     return jsonify(respuesta), codigo_http
 
-# --- INICIALIZAR LA BASE DE DATOS EN PRODUCCIÓN ---
-# Al dejar esta línea aquí afuera, Gunicorn la ejecutará sí o sí al arrancar.
-init_db() 
+# Inicializar las tablas sí o sí al arrancar el contenedor en Render
+init_db()
 
 if __name__ == '__main__':
-    # El app.run ya no necesita el init_db() adentro
     app.run(host='0.0.0.0', port=5000, debug=True)
