@@ -187,12 +187,18 @@ def mi_wallet():
         if not validar_rut_chileno(rut):
             error = "RUT inválido. Por favor, revisa el formato."
         else:
+            # ... adentro de tu ruta /wallet, donde se ejecuta la consulta:
             rut_limpio = rut.replace(".", "").replace("-", "").upper().strip()
             conn = get_db_connection()
             cursor = conn.cursor()
-            
-            # Buscamos cuántos puntos tiene este usuario
-            cursor.execute("SELECT puntos_wallet FROM usuarios WHERE rut = %s", (rut_limpio,))
+
+            # Usamos REPLACE en SQL para que compare el RUT de la base de datos sin guiones ni puntos
+            cursor.execute('''
+                SELECT puntos_wallet FROM usuarios 
+                WHERE rut = %s 
+                OR REPLACE(REPLACE(rut, '-', ''), '.', '') = %s
+            ''', (rut, rut_limpio))
+
             resultado = cursor.fetchone()
             
             cursor.close()
