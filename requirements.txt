@@ -25,6 +25,7 @@ pillow==12.2.0
 polars==1.40.1
 polars-runtime-32==1.40.1
 psutil==7.2.2
+psycopg2-binary==2.9.12
 pyparsing==3.3.2
 pyserial==3.5
 python-dateutil==2.9.0.post0
