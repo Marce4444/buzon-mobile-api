@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Wallet | Entel Recicla</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .wallet-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
+        .logo-entel { color: #0050ee; font-size: 24px; font-weight: bold; margin-bottom: 20px; display: block; text-decoration: none; }
+        h2 { color: #333; margin-bottom: 30px; }
+        input { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid #eee; border-radius: 8px; box-sizing: border-box; font-size: 16px; text-align: center; }
+        input:focus { outline: none; border-color: #0050ee; }
+        button { width: 100%; padding: 15px; background: #0050ee; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; transition: background 0.3s; }
+        button:hover { background: #003dbb; }
+        .error { color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; }
+        .saldo-box { background: #0050ee; color: white; padding: 30px 20px; border-radius: 12px; margin-top: 20px; }
+        .saldo-box p { margin: 0; font-size: 16px; opacity: 0.9; }
+        .saldo-box .puntos { font-size: 48px; font-weight: bold; margin: 10px 0; }
+        .volver { display: inline-block; margin-top: 20px; color: #0050ee; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="wallet-container">
+        <a href="/" class="logo-entel">Entel Recicla</a>
+        <h2>Consulta tu Saldo</h2>
+        
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        {% if puntos is not none %}
+            <div class="saldo-box">
+                <p>RUT: {{ rut }}</p>
+                <div class="puntos">{{ puntos }}</div>
+                <p>Puntos Disponibles</p>
+            </div>
+            <a href="/wallet" class="volver">Consultar otro RUT</a>
+        {% else %}
+            <form method="POST">
+                <input type="text" name="rut" placeholder="Ingresa tu RUT (ej: 12345678-9)" required autocomplete="off">
+                <button type="submit">Ver mis puntos</button>
+            </form>
+        {% endif %}
+        
+        <br>
+        <a href="/" class="volver">← Volver al inicio</a>
+    </div>
+</body>
+</html>

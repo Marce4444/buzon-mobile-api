@@ -174,6 +174,38 @@ def api_confirmar_deposito():
 
     return jsonify(respuesta), codigo_http
 
+# --- VISTA DEL CLIENTE: MI WALLET ---
+@app.route('/wallet', methods=['GET', 'POST'])
+def mi_wallet():
+    puntos = None
+    rut_buscado = None
+    error = None
+    
+    if request.method == 'POST':
+        rut = request.form.get('rut')
+        
+        if not validar_rut_chileno(rut):
+            error = "RUT inválido. Por favor, revisa el formato."
+        else:
+            rut_limpio = rut.replace(".", "").replace("-", "").upper().strip()
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Buscamos cuántos puntos tiene este usuario
+            cursor.execute("SELECT puntos_wallet FROM usuarios WHERE rut = %s", (rut_limpio,))
+            resultado = cursor.fetchone()
+            
+            cursor.close()
+            conn.close()
+            
+            if resultado:
+                puntos = resultado[0]
+                rut_buscado = rut
+            else:
+                error = "No encontramos este RUT en nuestra base de datos. ¡Anímate a hacer tu primer reciclaje!"
+                
+    return render_template('wallet.html', puntos=puntos, rut=rut_buscado, error=error)
+
 # --- 4. PANEL DE ADMINISTRACIÓN (POS) ---
 
 @app.route('/admin/login', methods=['GET', 'POST'])
