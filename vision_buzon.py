@@ -23,7 +23,7 @@ if not API_SECRET_KEY:
     print("[ERROR CRÍTICO SEGURIDAD] No se encontró 'API_SECRET_KEY' en el entorno local.")
     print("El sistema se detendrá para prevenir vulnerabilidades.")
     exit(1) # Detiene la ejecución del script de inmediato
-    
+
 def conectar_arduino():
     try:
         arduino = serial.Serial(PUERTO_ARDUINO, BAUD_RATE, timeout=1)
@@ -121,7 +121,7 @@ def iniciar_sistema_edge():
             for caja in r.boxes:
                 confianza = float(caja.conf[0])
                 
-                if confianza > 0.85:
+                if confianza > 0.70:
                     print(f"[IA-ÉXITO] ¡Objeto identificado como Celular! (Confianza: {confianza*100:.1f}%)")
                     
                     # --- PASO 4: CONEXIÓN INTERNÉ / ASIGNAR PUNTOS ---
