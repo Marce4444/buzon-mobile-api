@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
-import psycopg2  # Reemplazamos sqlite3 por psycopg2
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+import psycopg2
 import random
 import string
 import os
@@ -8,6 +8,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+
+# LLAVE PARA CIFRAR LAS SESIONES (COOKIES) DEL ADMINISTRADOR
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
+if not app.secret_key:
+    raise ValueError("¡Error Crítico! No se encontró app.secret_key en el entorno.")
+
+# CONFIGURACIÓN DE ACCESO AL POS
+ADMIN_USER = os.getenv("ADMIN_USER")
+if not ADMIN_USER:
+    raise ValueError("¡Error Crítico! No se encontró ADMIN_USER en el entorno.")
+ADMIN_PASS = os.getenv("ADMIN_PASS")
+if not ADMIN_PASS:
+    raise ValueError("¡Error Crítico! No se encontró ADMIN_PASS en el entorno.")
 
 # --- CONFIGURACIÓN Y SEGURIDAD ---
 API_SECRET_KEY = os.getenv("API_SECRET_KEY")
@@ -72,33 +85,38 @@ def generar_codigo_tiza():
 def index():
     return render_template('index.html')
 
-
 @app.route('/procesar', methods=['POST'])
 def procesar():
     rut = request.form.get('rut')
     nombre = request.form.get('nombre')
     modelo = request.form.get('modelo')
+    
+    # FILTRO DE SEGURIDAD NACIONAL: Validar el RUT matemáticamente
+    if not validar_rut_chileno(rut):
+        # Si el RUT es falso o inválido, redirige con un aviso o puedes retornar un error
+        return "<h3>Error: El RUT ingresado no es válido en el sistema nacional.</h3><a href='/'>Volver a intentar</a>", 400
+        
+    # Limpiar formato para guardarlo estándar en la base de datos (ej: 19123456K)
+    rut_limpio = rut.replace(".", "").replace("-", "").upper().strip()
     codigo = generar_codigo_tiza()
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Lógica de negocio (Cambiamos '?' por '%s' para PostgreSQL)
-    cursor.execute("SELECT rut FROM usuarios WHERE rut = %s", (rut,))
+    cursor.execute("SELECT rut FROM usuarios WHERE rut = %s", (rut_limpio,))
     if not cursor.fetchone():
-        cursor.execute("INSERT INTO usuarios (rut, nombre, puntos_wallet) VALUES (%s, %s, 0)", (rut, nombre))
+        cursor.execute("INSERT INTO usuarios (rut, nombre, puntos_wallet) VALUES (%s, %s, 0)", (rut_limpio, nombre))
     
     cursor.execute('''
         INSERT INTO transacciones (codigo_tiza, modelo_declarado, estado, rut_usuario)
         VALUES (%s, %s, 'ESPERANDO_DEPOSITO', %s)
-    ''', (codigo, modelo, rut))
+    ''', (codigo, modelo, rut_limpio))
     
     conn.commit()
     cursor.close()
     conn.close()
     
     return redirect(url_for('mostrar_codigo', codigo=codigo))
-
 
 @app.route('/codigo/<codigo>')
 def mostrar_codigo(codigo):
@@ -158,23 +176,45 @@ def api_confirmar_deposito():
 
 # --- 4. PANEL DE ADMINISTRACIÓN (POS) ---
 
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    error = None
+    if request.method == 'POST':
+        usuario = request.form.get('username')
+        clave = request.form.get('password')
+        
+        # Validar contra las variables de entorno seguras
+        if usuario == ADMIN_USER and clave == ADMIN_PASS:
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin_dashboard'))
+        else:
+            error = "Credenciales incorrectas. Acceso denegado."
+            
+    return render_template('login.html', error=error)
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('admin_login'))
+
 @app.route('/admin')
 def admin_dashboard():
+    # ESCUDO DE AUTENTICACIÓN: Si no hay sesión activa, rebota al login
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+        
     conn = get_db_connection()
     cursor = conn.cursor()
     
     try:
-        # 1. KPIs Globales
         cursor.execute("SELECT COUNT(*), COALESCE(SUM(puntos_wallet), 0) FROM usuarios")
         kpis = cursor.fetchone()
         total_usuarios = kpis[0]
         total_puntos = kpis[1]
         
-        # 2. Universo de Usuarios
         cursor.execute("SELECT rut, nombre, puntos_wallet, TO_CHAR(fecha_registro, 'DD-MM-YYYY HH24:MI') FROM usuarios ORDER BY fecha_registro DESC")
         usuarios = cursor.fetchall()
         
-        # 3. Auditoría de Transacciones (Últimas 50)
         cursor.execute('''
             SELECT codigo_tiza, modelo_declarado, estado, rut_usuario, TO_CHAR(fecha, 'DD-MM-YYYY HH24:MI') 
             FROM transacciones 
@@ -183,17 +223,45 @@ def admin_dashboard():
         transacciones = cursor.fetchall()
         
     except Exception as e:
-        print(f"Error cargando dashboard: {e}")
+        print(f"Error: {e}")
         total_usuarios, total_puntos, usuarios, transacciones = 0, 0, [], []
     finally:
         cursor.close()
         conn.close()
 
-    return render_template('admin.html', 
-                           total_usuarios=total_usuarios, 
-                           total_puntos=total_puntos, 
-                           usuarios=usuarios, 
-                           transacciones=transacciones)
+    return render_template('admin.html', total_usuarios=total_usuarios, total_puntos=total_puntos, usuarios=usuarios, transacciones=transacciones)
+
+def validar_rut_chileno(rut):
+    """Aplica el algoritmo Módulo 11 para verificar la validez del RUT"""
+    if not rut:
+        return False
+    # Limpiar caracteres comunes
+    rut = rut.replace(".", "").replace("-", "").upper().strip()
+    if len(rut) < 2:
+        return False
+    
+    cuerpo = rut[:-1]
+    dv = rut[-1]
+    
+    if not cuerpo.isdigit():
+        return False
+        
+    # Calcular dígito verificador esperado
+    suma = 0
+    multiplicador = 2
+    for c in reversed(cuerpo):
+        suma += int(c) * multiplicador
+        multiplicador = multiplicador + 1 if multiplicador < 7 else 2
+        
+    dv_esperado = 11 - (suma % 11)
+    if dv_esperado == 11:
+        dv_esperado = "0"
+    elif dv_esperado == 10:
+        dv_esperado = "K"
+    else:
+        dv_esperado = str(dv_esperado)
+        
+    return dv == dv_esperado
 
 # Inicializar base de datos de manera segura al arrancar el servicio
 init_db()
