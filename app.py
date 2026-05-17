@@ -156,6 +156,44 @@ def api_confirmar_deposito():
 
     return jsonify(respuesta), codigo_http
 
+# --- 4. PANEL DE ADMINISTRACIÓN (POS) ---
+
+@app.route('/admin')
+def admin_dashboard():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # 1. KPIs Globales
+        cursor.execute("SELECT COUNT(*), COALESCE(SUM(puntos_wallet), 0) FROM usuarios")
+        kpis = cursor.fetchone()
+        total_usuarios = kpis[0]
+        total_puntos = kpis[1]
+        
+        # 2. Universo de Usuarios
+        cursor.execute("SELECT rut, nombre, puntos_wallet, TO_CHAR(fecha_registro, 'DD-MM-YYYY HH24:MI') FROM usuarios ORDER BY fecha_registro DESC")
+        usuarios = cursor.fetchall()
+        
+        # 3. Auditoría de Transacciones (Últimas 50)
+        cursor.execute('''
+            SELECT codigo_tiza, modelo_declarado, estado, rut_usuario, TO_CHAR(fecha, 'DD-MM-YYYY HH24:MI') 
+            FROM transacciones 
+            ORDER BY fecha DESC LIMIT 50
+        ''')
+        transacciones = cursor.fetchall()
+        
+    except Exception as e:
+        print(f"Error cargando dashboard: {e}")
+        total_usuarios, total_puntos, usuarios, transacciones = 0, 0, [], []
+    finally:
+        cursor.close()
+        conn.close()
+
+    return render_template('admin.html', 
+                           total_usuarios=total_usuarios, 
+                           total_puntos=total_puntos, 
+                           usuarios=usuarios, 
+                           transacciones=transacciones)
 
 # Inicializar base de datos de manera segura al arrancar el servicio
 init_db()

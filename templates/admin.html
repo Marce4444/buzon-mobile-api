@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS | Control de Reciclaje</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: #0050ee; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .kpi-cards { display: flex; gap: 20px; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex: 1; text-align: center; }
+        .card h3 { margin: 0; color: #666; font-size: 14px; text-transform: uppercase; }
+        .card p { margin: 10px 0 0; font-size: 32px; font-weight: bold; color: #0050ee; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; margin-bottom: 30px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; color: #333; }
+        .badge-depositado { background: #d4edda; color: #155724; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;}
+        .badge-esperando { background: #fff3cd; color: #856404; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;}
+        h2 { color: #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>POS - Panel Administrativo de Reciclaje</h1>
+        </div>
+
+        <div class="kpi-cards">
+            <div class="card">
+                <h3>Total Usuarios</h3>
+                <p>{{ total_usuarios }}</p>
+            </div>
+            <div class="card">
+                <h3>Puntos Entel Emitidos</h3>
+                <p>{{ total_puntos }}</p>
+            </div>
+        </div>
+
+        <h2>Universo de Usuarios</h2>
+        <table>
+            <tr>
+                <th>RUT</th>
+                <th>Nombre</th>
+                <th>Puntos Wallet</th>
+                <th>Fecha Registro</th>
+            </tr>
+            {% for u in usuarios %}
+            <tr>
+                <td>{{ u[0] }}</td>
+                <td>{{ u[1] }}</td>
+                <td><strong>{{ u[2] }}</strong></td>
+                <td>{{ u[3] }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align: center;">No hay usuarios registrados aún.</td></tr>
+            {% endfor %}
+        </table>
+
+        <h2>Auditoría de Transacciones en Vivo</h2>
+        <table>
+            <tr>
+                <th>Código</th>
+                <th>Usuario (RUT)</th>
+                <th>Modelo Declarado</th>
+                <th>Estado</th>
+                <th>Fecha y Hora</th>
+            </tr>
+            {% for t in transacciones %}
+            <tr>
+                <td><strong>{{ t[0] }}</strong></td>
+                <td>{{ t[3] }}</td>
+                <td>{{ t[1] }}</td>
+                <td>
+                    {% if t[2] == 'DEPOSITADO' %}
+                        <span class="badge-depositado">{{ t[2] }}</span>
+                    {% else %}
+                        <span class="badge-esperando">{{ t[2] }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ t[4] }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align: center;">No hay transacciones registradas.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>
