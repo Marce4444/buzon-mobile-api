@@ -19,13 +19,12 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'buzon.db')
 print(f"[SYS] La base de datos se ubicará en: {DB_PATH}")
 
-# --- 1. CAPA DE DATOS (Arquitectura Limpia) ---
 def init_db():
-    print("[BD] Inicializando base de datos y verificando tablas...")
+    print("[BD] Verificando y asegurando tablas...")
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # Tabla de Usuarios (Wallet)
+    # Aseguramos la tabla de usuarios
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
             rut TEXT PRIMARY KEY,
@@ -35,7 +34,7 @@ def init_db():
         )
     ''')
     
-    # Tabla de Transacciones (Relacionada al RUT)
+    # Aseguramos la tabla de transacciones
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS transacciones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,7 +48,7 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
-    print("[BD] Base de datos limpia y lista para operar.")
+    print("[BD] Verificación exitosa. Tablas operativas.")
 
 def generar_codigo_tiza():
     letra = random.choice(string.ascii_uppercase)
@@ -70,10 +69,13 @@ def procesar():
     modelo = request.form.get('modelo')
     codigo = generar_codigo_tiza()
     
+    # ESCUDO DE RESPALDO: Si la tabla desapareció por un reinicio, la recreamos al vuelo
+    init_db() 
+    
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # Lógica de negocio: Si el usuario no existe, lo creamos (Upsert manual)
+    # Lógica de negocio (Tu código normal)
     cursor.execute("SELECT rut FROM usuarios WHERE rut = ?", (rut,))
     if not cursor.fetchone():
         cursor.execute("INSERT INTO usuarios (rut, nombre, puntos_wallet) VALUES (?, ?, 0)", (rut, nombre))
@@ -149,7 +151,7 @@ def api_confirmar_deposito():
 
     return jsonify(respuesta), codigo_http
 
-# Inicializar las tablas sí o sí al arrancar el contenedor en Render
+
 init_db()
 
 if __name__ == '__main__':
